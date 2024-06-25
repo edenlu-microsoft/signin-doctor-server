@@ -16,14 +16,7 @@ const allowedOrigins = [
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // 允许没有来源的请求，例如移动应用或 curl 请求
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins
   })
 );
 app.get("/ecom-config", async (req, res) => {
