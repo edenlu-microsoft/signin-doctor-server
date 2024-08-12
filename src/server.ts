@@ -6,7 +6,9 @@ import { diagnoseSignIn } from "./diagnoseSignIn";
 import { getEcomWebConfig } from "./getEcomWebConfig";
 
 // Initialize Application Insights
-appInsights.setup("b520cbde-7a0a-49c6-92f1-44b24163e3c0")
+const connectionString = "InstrumentationKey=b520cbde-7a0a-49c6-92f1-44b24163e3c0;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://westus.livediagnostics.monitor.azure.com/;ApplicationId=e324d531-7429-447d-82c9-5c7446739cf9"
+console.log(`appinsight connection string: ${connectionString}`)
+appInsights.setup(connectionString)
     .setAutoCollectConsole(true, true)
     .setAutoCollectExceptions(true)
     .setAutoCollectPerformance(true, true)
@@ -49,8 +51,13 @@ app.get("/ecom-config", async (req, res) => {
     const requestContext = await getEcomWebConfig(ecomUrl);
     res.send(requestContext);
   } catch (exception) {
-    console.error(exception);
-    res.status(400).send(exception);
+    console.error("Error occurred during sign-in diagnose:", exception);
+    client.trackException({ exception: exception as any });
+    res.status(500).send({
+      message: "Internal Server Error",
+      error: ( exception as any).message,
+      stack: ( exception as any).stack,
+    });
   }
 });
 
@@ -68,6 +75,7 @@ app.post("/sign-in-diagnose", async (req: Request, res: Response) => {
 
     res.send(diagnoseResult);
   } catch (exception) {
+    client.trackException({ exception: exception as any });
     console.error(exception);
     res.status(400).send(exception);
   }
