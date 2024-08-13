@@ -1,4 +1,5 @@
 import * as appInsights from "applicationinsights";
+import axios from "axios";
 import bodyParser from "body-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
@@ -18,7 +19,7 @@ appInsights.setup(connectionString)
 
 const client = appInsights.defaultClient;
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 const app = express();
 
 const allowedOrigins = [
@@ -74,6 +75,39 @@ app.post("/sign-in-diagnose", async (req: Request, res: Response) => {
     const diagnoseResult = await diagnoseSignIn(signInUrl, email, pwd);
 
     res.send(diagnoseResult);
+  } catch (exception) {
+    client.trackException({ exception: exception as any });
+    console.error(exception);
+    res.status(400).send(exception);
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}/`);
+});
+
+
+app.post("/csu", async (req: Request, res: Response) => {
+  try {
+    const method = req.body?.method;
+    const endpoint = req.body?.endpoint;
+    const body = req.body?.body;
+    const headers = req.body?.headers;
+
+    if (!method || !endpoint) {
+      res.status(400).send("missing inputs");
+    }
+
+    if (method === 'GET') {
+      const response = await axios.get(endpoint, {headers});
+      res.send(response.data);
+      return;
+    } else if (method === 'POST') {
+      const response = await axios.post(endpoint, body, {headers});
+      res.send(response.data);
+      return;
+    }
+
   } catch (exception) {
     client.trackException({ exception: exception as any });
     console.error(exception);

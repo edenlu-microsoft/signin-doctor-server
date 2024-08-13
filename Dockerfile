@@ -1,4 +1,7 @@
-apt-get update && apt-get install -y \
+FROM node:18
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     libgconf-2-4 \
@@ -24,5 +27,23 @@ apt-get update && apt-get install -y \
     libxrender1 \
     libxext6
 
-echo "Starting Node.js server..."
-npm start
+# Clear npm cache
+RUN npm cache clean --force
+
+# Install Chrome using Puppeteer
+RUN npx puppeteer browsers install chrome
+
+# Set working directory
+WORKDIR /app
+
+# Copy all files
+COPY . .
+
+# Install dependencies
+RUN npm install
+
+# Expose the port the app runs on
+EXPOSE 8080
+
+# Start the application
+CMD ["npm", "start"]

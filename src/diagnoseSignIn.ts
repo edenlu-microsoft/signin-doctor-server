@@ -1,96 +1,98 @@
 import * as jwt from "jsonwebtoken";
-import puppeteer, { Page, TimeoutError } from "puppeteer";
-import { executablePath } from "./config";
-
+import { Page, TimeoutError } from "puppeteer";
+import { PuppeteerClusterController } from "./PuppeteerClusterController";
 export const diagnoseSignIn = async (
   signInUrl: string,
   email: string,
   pwd: string
 ) => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
-  );
-  await page.setRequestInterception(true);
-  const result: any = { authStack: [] };
+  const cluster = PuppeteerClusterController.getInstance().getCluster();
 
-  const startTime = Date.now();
+  const result = await cluster.execute(
+    signInUrl,
+    async ({ page, data: url }) => {
+      await page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
+      );
+      await page.setRequestInterception(true);
+      const result: any = { authStack: [] };
 
-  page.on("request", async (request) => {
-    const requestPayload = {
-      url: request.url(),
-      method: request.method(),
-      postData: request.postData(),
-      headers: request.headers(),
-    };
-    request.continue();
+      const startTime = Date.now();
 
-    if (requestPayload.url.includes("/authresp")) {
-      if (!result.redirects) result.redirects = [];
-      result.redirects.push({ request: requestPayload });
+      page.on("request", async (request) => {
+        const requestPayload = {
+          url: request.url(),
+          method: request.method(),
+          postData: request.postData(),
+          headers: request.headers(),
+        };
+        request.continue();
 
-      // process
-      const urlParams = new URLSearchParams(requestPayload.postData);
-      const idToken = urlParams.get("id_token");
+        if (requestPayload.url.includes("/authresp")) {
+          if (!result.redirects) result.redirects = [];
+          result.redirects.push({ request: requestPayload });
 
-      result.authStack.push(requestPayload);
+          // process
+          const urlParams = new URLSearchParams(requestPayload.postData);
+          const idToken = urlParams.get("id_token");
 
-      if (idToken) {
-        result.token = idToken;
-        result.tokenPayload = jwt.decode(idToken);
+          result.authStack.push(requestPayload);
+
+          if (idToken) {
+            result.token = idToken;
+            result.tokenPayload = jwt.decode(idToken);
+          }
+        }
+      });
+
+      try {
+        await page.goto(url, {
+          waitUntil: "networkidle0",
+        });
+
+        const azureRedirectUrl = page.url();
+        const urlObj = new URL(azureRedirectUrl);
+        const queryParams = new URLSearchParams(urlObj.search);
+
+        result.signInPolicy = queryParams.get("p");
+        result.signInClientId = queryParams.get("client_id");
+        result.signInSucceed = false;
+
+        // #0 check if azure load the page properly
+        await checkAzurePageLoaded(page);
+
+        // #1 try signin
+        await submitCredential(page, email, pwd);
+
+        // #2 wait for redirect completed, should redirect to the url specied in ru
+        await checkSignInError(page, result);
+
+        // #3 verify user info
+        // const user = await page.evaluate(() => {
+        //   return (window as any).___initialData___?.requestContext?.user;
+        // });
+
+        // result.token = user?.token;
+        // result.signInSucceed =
+        //   !result.retailServerErrorCode &&
+        //   !result.retailServerErrorMessage &&
+        //   !!result.token;
+
+        // if (result.token) {
+        //   const tokenPayload = jwt.decode(result.token);
+        //   result.tokenPayload = tokenPayload;
+        // }
+
+        // skipping step 3 for performance, passing token to client side to do the check
+      } catch (exception: any) {
+        result.error = exception.message ?? JSON.stringify(exception);
       }
+
+      result.time = (Date.now() - startTime) / 1000;
+
+      return result;
     }
-  });
-
-  try {
-    await page.goto(signInUrl, {
-      waitUntil: "networkidle0",
-    });
-
-    const azureRedirectUrl = page.url();
-    const urlObj = new URL(azureRedirectUrl);
-    const queryParams = new URLSearchParams(urlObj.search);
-
-    result.signInPolicy = queryParams.get("p");
-    result.signInClientId = queryParams.get("client_id");
-    result.signInSucceed = false;
-
-    // #0 check if azure load the page properly
-    await checkAzurePageLoaded(page);
-
-    // #1 try signin
-    await submitCredential(page, email, pwd);
-
-    // #2 wait for redirect completed, should redirect to the url specied in ru
-    await checkSignInError(page, result);
-
-    // #3 verify user info
-    const user = await page.evaluate(() => {
-      return (window as any).___initialData___?.requestContext?.user;
-    });
-
-    result.token = user?.token;
-    result.signInSucceed =
-      !result.retailServerErrorCode &&
-      !result.retailServerErrorMessage &&
-      !!result.token;
-
-    if (result.token) {
-      const tokenPayload = jwt.decode(result.token);
-      result.tokenPayload = tokenPayload;
-    }
-  } catch (exception: any) {
-    result.error = exception.message ?? JSON.stringify(exception);
-  } finally {
-    await browser.close();
-  }
-
-  result.time = (Date.now() - startTime) / 1000;
+  );
 
   return result;
 };
@@ -158,13 +160,15 @@ const waitForUserTokenOrRetailError = async (page: Page, result: any) => {
           retailServerErrorMessage
         );
       },
-      { timeout: 15000, polling: 500 }
+      { timeout: 10000, polling: 500 }
     );
   } catch (error) {
     if (error instanceof TimeoutError) {
-      throw "Somehow token is not available in requestContext after sign-in";
+      // no worries, just
+      console.error("no worries, token will be get from authresp");
+      // throw "Somehow token is not available in requestContext after sign-in";
     } else {
-      throw error;
+      console.error(`nav to homepage and caught exception: ${error}`);
     }
   }
 
