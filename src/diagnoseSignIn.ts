@@ -9,8 +9,7 @@ export const diagnoseSignIn = async (
 ) => {
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath
   });
   const page = await browser.newPage();
   await page.setUserAgent(
