@@ -1,0 +1,1 @@
+export const executablePath = '/home/.cache/puppeteer/chrome/linux-126.0.6478.63/chrome-linux64/chrome';
