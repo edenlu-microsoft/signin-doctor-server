@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "cd ./node_modules/puppeteer && npm run install && cd ..",
+    "postinstall": "cd ./node_modules/puppeteer && npm install && cd ..",
     "start": "npx ts-node src/server.ts"
   },
   "author": "",
