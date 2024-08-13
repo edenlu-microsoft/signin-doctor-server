@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npm install puppeteer",
+    "postinstall": "npx puppeteer browsers install chrome",
     "start": "npx ts-node src/server.ts"
   },
   "author": "",

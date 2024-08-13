@@ -5,7 +5,8 @@ export const getEcomWebConfig = async (url: string) => {
   // const url = 'https://hgg-test-ecom.dynamics365commerce.ms/hgg_b2b';
   const browser = await puppeteer.launch({
     headless: true,
-    executablePath
+    executablePath,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   }); // Launch browser in non-headless mode
   const page = await browser.newPage();
 
