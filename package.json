@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npm run install-puppeteer",
-    "install-puppeteer": "puppeteer install",
+    "postinstall": "npx puppeteer browsers install",
     "start": "npx ts-node src/server.ts"
   },
   "author": "",
