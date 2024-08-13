@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "bash ./install_chrome.sh",
     "start": "npx ts-node src/server.ts"
   },
   "author": "",
