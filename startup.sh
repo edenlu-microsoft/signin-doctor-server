@@ -18,7 +18,11 @@ apt-get update && apt-get install -y \
     libcups2 \
     libdbus-1-3 \
     libxtst6 \
-    x11-utils
+    x11-utils \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6
 
 echo "Starting Node.js server..."
 npm start
