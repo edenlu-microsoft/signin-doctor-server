@@ -4,16 +4,24 @@ which is every hard to setup using normal bash script (cannot use npm script wil
 thus using docker
 
 Build image:
+```
 docker login
 docker build -t signin-doctor-server:1.2 .
-testing locally: docker run -p 8080:8080 signin-doctor-server:1.2
+
+```
+
+testing locally:
+```
+docker run -p 8080:8080 signin-doctor-server:1.2
+```
 
 once things are working, may do the deployment:
-
+```
 docker tag signin-doctor-server:1.2 edencontainer.azurecr.io/signin-doctor-server:1.2
 az login
 az acr login --name edencontainer
 docker push edencontainer.azurecr.io/signin-doctor-server:1.2
+```
 
 // after this step the repository should be available at acr
 https://ms.portal.azure.com/#view/Microsoft_Azure_ContainerRegistries/RepositoryBlade/id/%2Fsubscriptions%2Fcdb0170f-5d28-4cba-ac20-3a6817649a78%2FresourceGroups%2Frg-ecommerce-global%2Fproviders%2FMicrosoft.ContainerRegistry%2Fregistries%2Fedencontainer/repository/signin-doctor-server

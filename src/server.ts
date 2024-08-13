@@ -5,6 +5,7 @@ import cors from "cors";
 import express, { Request, Response } from "express";
 import { diagnoseSignIn } from "./diagnoseSignIn";
 import { getEcomWebConfig } from "./getEcomWebConfig";
+import { PuppeteerClusterController } from "./PuppeteerClusterController";
 
 // Initialize Application Insights
 const connectionString = "InstrumentationKey=b520cbde-7a0a-49c6-92f1-44b24163e3c0;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://westus.livediagnostics.monitor.azure.com/;ApplicationId=e324d531-7429-447d-82c9-5c7446739cf9"
@@ -18,6 +19,9 @@ appInsights.setup(connectionString)
     .start();
 
 const client = appInsights.defaultClient;
+
+// initialize the brower clusters
+PuppeteerClusterController.getInstance().init();
 
 const port = process.env.PORT || 8080;
 const app = express();
