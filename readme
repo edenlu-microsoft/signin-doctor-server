@@ -1,26 +1,30 @@
 ## Build & deployment
+
 this app requires chrome/edge installation at web service
 which is every hard to setup using normal bash script (cannot use npm script will have no permission to install apk-get dependencies)
 thus using docker
 
 Build image:
+
 ```
 docker login
-docker build -t signin-doctor-server:1.2 .
+docker build -t signin-doctor-server:1.0 .
 
 ```
 
 testing locally:
+
 ```
-docker run -p 8080:8080 signin-doctor-server:1.2
+docker run -p 8080:8080 signin-doctor-server:1.0
 ```
 
 once things are working, may do the deployment:
+
 ```
-docker tag signin-doctor-server:1.2 edencontainer.azurecr.io/signin-doctor-server:1.2
+docker tag signin-doctor-server:1.0 edencontainer.azurecr.io/signin-doctor-server:1.0
 az login
 az acr login --name edencontainer
-docker push edencontainer.azurecr.io/signin-doctor-server:1.2
+docker push edencontainer.azurecr.io/signin-doctor-server:1.0
 ```
 
 // after this step the repository should be available at acr
