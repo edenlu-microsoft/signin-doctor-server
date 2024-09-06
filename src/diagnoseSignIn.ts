@@ -110,7 +110,8 @@ const checkAzurePageLoaded = async (page: Page) => {
 };
 
 const submitCredential = async (page: Page, email: string, pwd: string) => {
-  const emailInput = await page.$("#email");
+  const emailInputs = await page.$$("input[type='email']");
+  const emailInput = emailInputs?.[0];
   await emailInput?.type(email);
   const passwordInput = await page.$("#password");
   await passwordInput?.type(pwd);

@@ -6,7 +6,9 @@ export const getEcomWebConfig = async (url: string) => {
   const requestContext = await cluster.execute(
     url,
     async ({ page, data: url }) => {
-      await page.goto(url);
+      await page.goto(url, {
+        waitUntil: "networkidle0",
+      });
 
       // Execute the command in the console
       const requestContext = await page.evaluate(() => {

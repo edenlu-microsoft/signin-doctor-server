@@ -8,15 +8,17 @@ import { getEcomWebConfig } from "./getEcomWebConfig";
 import { PuppeteerClusterController } from "./PuppeteerClusterController";
 
 // Initialize Application Insights
-const connectionString = "InstrumentationKey=b520cbde-7a0a-49c6-92f1-44b24163e3c0;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://westus.livediagnostics.monitor.azure.com/;ApplicationId=e324d531-7429-447d-82c9-5c7446739cf9"
-console.log(`appinsight connection string: ${connectionString}`)
-appInsights.setup(connectionString)
-    .setAutoCollectConsole(true, true)
-    .setAutoCollectExceptions(true)
-    .setAutoCollectPerformance(true, true)
-    .setAutoCollectRequests(true)
-    .setUseDiskRetryCaching(true)
-    .start();
+const connectionString =
+  "InstrumentationKey=b520cbde-7a0a-49c6-92f1-44b24163e3c0;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/;LiveEndpoint=https://westus.livediagnostics.monitor.azure.com/;ApplicationId=e324d531-7429-447d-82c9-5c7446739cf9";
+console.log(`appinsight connection string: ${connectionString}`);
+appInsights
+  .setup(connectionString)
+  .setAutoCollectConsole(true, true)
+  .setAutoCollectExceptions(true)
+  .setAutoCollectPerformance(true, true)
+  .setAutoCollectRequests(true)
+  .setUseDiskRetryCaching(true)
+  .start();
 
 const client = appInsights.defaultClient;
 
@@ -35,7 +37,7 @@ const allowedOrigins = [
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: allowedOrigins
+    origin: allowedOrigins,
   })
 );
 
@@ -60,8 +62,8 @@ app.get("/ecom-config", async (req, res) => {
     client.trackException({ exception: exception as any });
     res.status(500).send({
       message: "Internal Server Error",
-      error: ( exception as any).message,
-      stack: ( exception as any).stack,
+      error: (exception as any).message,
+      stack: (exception as any).stack,
     });
   }
 });
@@ -90,7 +92,6 @@ app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`);
 });
 
-
 app.post("/csu", async (req: Request, res: Response) => {
   try {
     const method = req.body?.method;
@@ -102,20 +103,21 @@ app.post("/csu", async (req: Request, res: Response) => {
       res.status(400).send("missing inputs");
     }
 
-    if (method === 'GET') {
-      const response = await axios.get(endpoint, {headers});
+    if (method === "GET") {
+      const response = await axios.get(endpoint, { headers });
       res.send(response.data);
       return;
-    } else if (method === 'POST') {
-      const response = await axios.post(endpoint, body, {headers});
+    } else if (method === "POST") {
+      const response = await axios.post(endpoint, body, { headers });
       res.send(response.data);
       return;
     }
-
   } catch (exception) {
-    client.trackException({ exception: exception as any });
-    console.error(exception);
-    res.status(400).send(exception);
+    const castedException = exception as any;
+    const error = castedException?.response?.data;
+    client.trackException({ exception: error });
+    console.error(error);
+    res.status(400).send(error);
   }
 });
 
